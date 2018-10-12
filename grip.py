@@ -174,97 +174,97 @@ class GripPipeline:
 		"""
 		return cv2.erode(src, kernel, anchor, iterations = (int) (iterations +0.5), borderType = border_type, borderValue = border_value)
 
-    @staticmethod
-    def __mask(input, mask):
-        """Filter out an area of an image using a binary mask.
-        Args:
-            input: A three channel numpy.ndarray.
-            mask: A black and white numpy.ndarray.
-        Returns:
-            A three channel numpy.ndarray.
-        """
-        return cv2.bitwise_and(input, input, mask=mask)
+	@staticmethod
+	def __mask(input, mask):
+		"""Filter out an area of an image using a binary mask.
+		Args:
+		input: A three channel numpy.ndarray.
+		mask: A black and white numpy.ndarray.
+		Returns:
+		A three channel numpy.ndarray.
+		"""
+		return cv2.bitwise_and(input, input, mask=mask)
 
-    @staticmethod
-    def __hsl_threshold(input, hue, sat, lum):
-        """Segment an image based on hue, saturation, and luminance ranges.
-        Args:
-            input: A BGR numpy.ndarray.
-            hue: A list of two numbers the are the min and max hue.
-            sat: A list of two numbers the are the min and max saturation.
-            lum: A list of two numbers the are the min and max luminance.
-        Returns:
-            A black and white numpy.ndarray.
-        """
-        out = cv2.cvtColor(input, cv2.COLOR_BGR2HLS)
-	cv2.imshow('Jackson is the best build captain', out)
-        return cv2.inRange(out, (hue[0], lum[0], sat[0]),  (hue[1], lum[1], sat[1]))
+	@staticmethod
+	def __hsl_threshold(input, hue, sat, lum):
+		"""Segment an image based on hue, saturation, and luminance ranges.
+		Args:
+		input: A BGR numpy.ndarray.
+		hue: A list of two numbers the are the min and max hue.
+		sat: A list of two numbers the are the min and max saturation.
+		lum: A list of two numbers the are the min and max luminance.
+		Returns:
+		A black and white numpy.ndarray.
+		"""
+		out = cv2.cvtColor(input, cv2.COLOR_BGR2HLS)
+		cv2.imshow('Jackson is the best build captain', out)
+		return cv2.inRange(out, (hue[0], lum[0], sat[0]),  (hue[1], lum[1], sat[1]))
 
-    @staticmethod
-    def __find_contours(input, external_only):
-        """Sets the values of pixels in a binary image to their distance to the nearest black pixel.
-        Args:
-            input: A numpy.ndarray.
-            external_only: A boolean. If true only external contours are found.
-        Return:
-            A list of numpy.ndarray where each one represents a contour.
-        """
-        if(external_only):
-            mode = cv2.RETR_EXTERNAL
-        else:
-            mode = cv2.RETR_LIST
-        method = cv2.CHAIN_APPROX_SIMPLE
-        #im2, contours, hierarchy =cv2.findContours(input, mode=mode, method=method)
-	try:
-		contours, hierarchy =cv2.findContours(input, mode=mode, method=method)
-	except:
-		_, contours, hierarchy =cv2.findContours(input, mode=mode, method=method)
-	return contours
+	@staticmethod
+	def __find_contours(input, external_only):
+		"""Sets the values of pixels in a binary image to their distance to the nearest black pixel.
+		Args:
+		input: A numpy.ndarray.
+		external_only: A boolean. If true only external contours are found.
+		Return:
+		A list of numpy.ndarray where each one represents a contour.
+		"""
+		if(external_only):
+			mode = cv2.RETR_EXTERNAL
+		else:
+			mode = cv2.RETR_LIST
+			method = cv2.CHAIN_APPROX_SIMPLE
+			#im2, contours, hierarchy =cv2.findContours(input, mode=mode, method=method)
+		try:
+			contours, hierarchy =cv2.findContours(input, mode=mode, method=method)
+		except:
+			_, contours, hierarchy =cv2.findContours(input, mode=mode, method=method)
+		return contours
 
-    @staticmethod
-    def __filter_contours(input_contours, min_area, min_perimeter, min_width, max_width,
+	@staticmethod
+	def __filter_contours(input_contours, min_area, min_perimeter, min_width, max_width,
                         min_height, max_height, solidity, max_vertex_count, min_vertex_count,
                         min_ratio, max_ratio):
-        """Filters out contours that do not meet certain criteria.
-        Args:
-            input_contours: Contours as a list of numpy.ndarray.
-            min_area: The minimum area of a contour that will be kept.
-            min_perimeter: The minimum perimeter of a contour that will be kept.
-            min_width: Minimum width of a contour.
-            max_width: MaxWidth maximum width.
-            min_height: Minimum height.
-            max_height: Maximimum height.
-            solidity: The minimum and maximum solidity of a contour.
-            min_vertex_count: Minimum vertex Count of the contours.
-            max_vertex_count: Maximum vertex Count.
-            min_ratio: Minimum ratio of width to height.
-            max_ratio: Maximum ratio of width to height.
-        Returns:
-            Contours as a list of numpy.ndarray.
-        """
-        output = []
-        for contour in input_contours:
-            x,y,w,h = cv2.boundingRect(contour)
-            if (w < min_width or w > max_width):
-                continue
-            if (h < min_height or h > max_height):
-                continue
-            area = cv2.contourArea(contour)
-            if (area < min_area):
-                continue
-            if (cv2.arcLength(contour, True) < min_perimeter):
-                continue
-            hull = cv2.convexHull(contour)
-            solid = 100 * area / cv2.contourArea(hull)
-            if (solid < solidity[0] or solid > solidity[1]):
-                continue
-            if (len(contour) < min_vertex_count or len(contour) > max_vertex_count):
-                continue
-            ratio = (float)(w) / h
-            if (ratio < min_ratio or ratio > max_ratio):
-                continue
-            output.append(contour)
-        return output
+		"""Filters out contours that do not meet certain criteria.
+		Args:
+		input_contours: Contours as a list of numpy.ndarray.
+		min_area: The minimum area of a contour that will be kept.
+		min_perimeter: The minimum perimeter of a contour that will be kept.
+		min_width: Minimum width of a contour.
+		max_width: MaxWidth maximum width.
+		min_height: Minimum height.
+		max_height: Maximimum height.
+		solidity: The minimum and maximum solidity of a contour.
+		min_vertex_count: Minimum vertex Count of the contours.
+		max_vertex_count: Maximum vertex Count.
+		min_ratio: Minimum ratio of width to height.
+		max_ratio: Maximum ratio of width to height.
+		Returns:
+		Contours as a list of numpy.ndarray.
+		"""
+		output = []
+		for contour in input_contours:
+			x,y,w,h = cv2.boundingRect(contour)
+			if (w < min_width or w > max_width):
+				continue
+			if (h < min_height or h > max_height):
+				continue
+			area = cv2.contourArea(contour)
+			if (area < min_area):
+				continue
+			if (cv2.arcLength(contour, True) < min_perimeter):
+				continue
+			hull = cv2.convexHull(contour)
+			solid = 100 * area / cv2.contourArea(hull)
+			if (solid < solidity[0] or solid > solidity[1]):
+				continue
+			if (len(contour) < min_vertex_count or len(contour) > max_vertex_count):
+				continue
+			ratio = (float)(w) / h
+			if (ratio < min_ratio or ratio > max_ratio):
+				continue
+			output.append(contour)
+		return output
 
 
 

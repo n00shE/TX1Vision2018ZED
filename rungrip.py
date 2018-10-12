@@ -25,10 +25,11 @@ import pyzed.defines as sl
 from networktables import NetworkTables
 from grip import GripPipeline  
 
-camera_settings = sl.PyCAMERA_SETTINGS.PyCAMERA_SETTINGS_BRIGHTNESS
-str_camera_settings = "BRIGHTNESS"
-step_camera_settings = 1
-
+def print_camera_information(cam):
+	print("Resolution: {0}, {1}.".format(round(cam.get_resolution().width, 2), cam.get_resolution().height))
+	print("Camera FPS: {0}.".format(cam.get_camera_fps()))
+	print("Firmware: {0}.".format(cam.get_camera_information().firmware_version))
+	print("Serial number: {0}.\n".format(cam.get_camera_information().serial_number))
 
 print("Running...")
 init = zcam.PyInitParameters()
@@ -44,7 +45,6 @@ runtime = zcam.PyRuntimeParameters()
 mat = core.PyMat()
 
 print_camera_information(cam)
-print_help()
 
 key = ''
 while key != 113:  # for 'q' key
@@ -53,7 +53,6 @@ while key != 113:  # for 'q' key
         cam.retrieve_image(mat, sl.PyVIEW.PyVIEW_LEFT)
         cv2.imshow("ZED", mat.get_data())
         key = cv2.waitKey(5)
-        settings(key, cam, runtime, mat)
     else:
         key = cv2.waitKey(5)
 cv2.destroyAllWindows()
