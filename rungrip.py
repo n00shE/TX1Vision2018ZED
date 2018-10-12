@@ -45,9 +45,6 @@ if status != tp.PyERROR_CODE.PySUCCESS:
 	print(repr(status))
 	streamRunning = False
 	exit()
-err = cam.grab(runtime)
-if err == tp.PyERROR_CODE.PySUCCESS:
-	streamRunning = True
 
 mat = core.PyMat()
 
@@ -117,8 +114,10 @@ while(streamRunning == True):
 """
 
 while streamRunning:
-	cam.retrieve_image(mat, sl.PyVIEW.PyVIEW_LEFT)
-	cv2.imshow("ZED", mat.get_data())
+	err = cam.grab(runtime)
+	if err == tp.PyERROR_CODE.PySUCCESS:
+		cam.retrieve_image(mat, sl.PyVIEW.PyVIEW_LEFT)
+		cv2.imshow("ZED", mat.get_data())
 	#bytes += stream.read(1024)
 	#a = bytes.find('\xff\xd8')
 	#b = bytes.find('\xff\xd9')
@@ -130,45 +129,45 @@ while streamRunning:
 		#frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), color)
 
 		#cv2.imshow('Image', frame)
-
-	pipeline.process(mat.get_data())
+		"""
+		pipeline.process(image)
 		#print pipeline.boundingRects
 		#print pipeline.center
 		#print pipeline.filter_contours_output
 		#print pipeline.rects
 		#print pipeline.largestRect
-	if (pipeline.largestRect) != None: 
-		"""
+		if (pipeline.largestRect) != None: 
+		
 		#xtwo = pipeline.rects[0][0] + pipeline.rects[0][2]
 		#ytwo = pipeline.rects[0][1] + pipeline.rects[0][3]
 		#cv2.rectangle(frame, (pipeline.rects[0][0],pipeline.rects[0][1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
 		#cv2.imshow("Rectangle", frame)
-		"""
-		xtwo = pipeline.largestRect[0] + pipeline.largestRect[2]
-		ytwo = pipeline.largestRect[1] + pipeline.largestRect[3]
+		
+			xtwo = pipeline.largestRect[0] + pipeline.largestRect[2]
+			ytwo = pipeline.largestRect[1] + pipeline.largestRect[3]
 	    
-		centerX = [pipeline.largestRect[0] + pipeline.largestRect[2]/2]
-		centerY = [pipeline.largestRect[1] + pipeline.largestRect[3]/2]
-		cv2.rectangle(mat.get_data(), (pipeline.largestRect[0],pipeline.largestRect[1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
-		cv2.imshow("Rectangle", mat.get_data())
+			centerX = [pipeline.largestRect[0] + pipeline.largestRect[2]/2]
+			centerY = [pipeline.largestRect[1] + pipeline.largestRect[3]/2]
+			#cv2.rectangle(mat.get_data(), (pipeline.largestRect[0],pipeline.largestRect[1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
+			#cv2.imshow("Rectangle", mat.get_data())
 
-		sd.putNumberArray("centerX", centerX)
-		sd.putNumberArray("centerY", centerY)
-		sd.putNumberArray("width", [pipeline.largestRect[2]])
-		sd.putNumberArray("height", [pipeline.largestRect[3]])
-		sd.putNumberArray("area", [pipeline.largestArea])
-#		sd.putNumber("Test", len(pipeline.largestRect))
-#		print pipeline.largestArea
-	else:
-		sd.putNumberArray("centerX", [])
-		sd.putNumberArray("centerY", [])
-		sd.putNumberArray("width", [])
-		sd.putNumberArray("height", [])
-		sd.putNumberArray("area", [])
+			sd.putNumberArray("centerX", centerX)
+			sd.putNumberArray("centerY", centerY)
+			sd.putNumberArray("width", [pipeline.largestRect[2]])
+			sd.putNumberArray("height", [pipeline.largestRect[3]])
+			sd.putNumberArray("area", [pipeline.largestArea])
+#			sd.putNumber("Test", len(pipeline.largestRect))
+#			print pipeline.largestArea
+		else:
+			sd.putNumberArray("centerX", [])
+			sd.putNumberArray("centerY", [])
+			sd.putNumberArray("width", [])
+			sd.putNumberArray("height", [])
+			sd.putNumberArray("area", [])
 
-
-		# Press Q on keyboard to  exit
-	if cv2.waitKey(25) & 0xFF == ord('q'):
-		cam.close()
-		break
+		"""
+			# Press Q on keyboard to  exit
+		if cv2.waitKey(25) & 0xFF == ord('q'):
+			cam.close()
+			break
    
