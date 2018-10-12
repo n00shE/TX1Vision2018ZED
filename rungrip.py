@@ -129,13 +129,13 @@ while streamRunning:
 		#frame = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), color)
 
 		#cv2.imshow('Image', frame)
-		"""
-		pipeline.process(image)
+		
+		pipeline.process(mat.get_data())
 		#print pipeline.boundingRects
 		#print pipeline.center
 		#print pipeline.filter_contours_output
 		#print pipeline.rects
-		#print pipeline.largestRect
+		print (pipeline.largestRect)
 		if (pipeline.largestRect) != None: 
 		
 		#xtwo = pipeline.rects[0][0] + pipeline.rects[0][2]
@@ -148,8 +148,8 @@ while streamRunning:
 	    
 			centerX = [pipeline.largestRect[0] + pipeline.largestRect[2]/2]
 			centerY = [pipeline.largestRect[1] + pipeline.largestRect[3]/2]
-			#cv2.rectangle(mat.get_data(), (pipeline.largestRect[0],pipeline.largestRect[1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
-			#cv2.imshow("Rectangle", mat.get_data())
+			cv2.rectangle(mat.get_data(), (pipeline.largestRect[0],pipeline.largestRect[1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
+			cv2.imshow("Rectangle", mat.get_data())
 
 			sd.putNumberArray("centerX", centerX)
 			sd.putNumberArray("centerY", centerY)
@@ -165,7 +165,7 @@ while streamRunning:
 			sd.putNumberArray("height", [])
 			sd.putNumberArray("area", [])
 
-		"""
+		
 			# Press Q on keyboard to  exit
 		if cv2.waitKey(25) & 0xFF == ord('q'):
 			cam.close()
