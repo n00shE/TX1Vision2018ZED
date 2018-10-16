@@ -48,12 +48,18 @@ if status != tp.PyERROR_CODE.PySUCCESS:
 
 mat = core.PyMat()
 
+cam.set_camera_settings(sl.PyCAMERA_SETTINGS.PyCAMERA_SETTINGS_EXPOSURE, 30)
+current_value = cam.get_camera_settings(sl.PyCAMERA_SETTINGS.PyCAMERA_SETTINGS_EXPOSURE)
+print("Exposure: " + str(current_value))
+
 print_camera_information(cam)
 
 now = datetime.datetime.now()
 print("Vision Log for " + str(now.day) + "/" + str(now.month) + "/" + str(now.year) + "  ~    " + str(now.hour) + ":" + str(now.minute) +":" + str(now.second))
 print("OpenCV version: " + str(cv2.__version__))
 print("Starting Vision...")
+
+vid = cam.enable_recording("/mnt/c482766e-ece6-4ec0-8ed2-01712e4e5516/test" + str(now.hour) + ":" + str(now.minute) +":" + str(now.second) + ".svo")
 
 bytes = ''
 version = int(cv2.__version__[:1])
@@ -131,11 +137,15 @@ while streamRunning:
 		#cv2.imshow('Image', frame)
 		
 		pipeline.process(mat.get_data())
+
+		#print(repr(vid))
+		cam.record()
+
 		#print pipeline.boundingRects
 		#print pipeline.center
 		#print pipeline.filter_contours_output
 		#print pipeline.rects
-		print (pipeline.largestRect)
+		#print (pipeline.largestRect)
 		if (pipeline.largestRect) != None: 
 		
 		#xtwo = pipeline.rects[0][0] + pipeline.rects[0][2]
@@ -148,8 +158,8 @@ while streamRunning:
 	    
 			centerX = [pipeline.largestRect[0] + pipeline.largestRect[2]/2]
 			centerY = [pipeline.largestRect[1] + pipeline.largestRect[3]/2]
-			cv2.rectangle(mat.get_data(), (pipeline.largestRect[0],pipeline.largestRect[1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
-			cv2.imshow("Rectangle", mat.get_data())
+			#cv2.rectangle(mat.get_data(), (pipeline.largestRect[0],pipeline.largestRect[1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
+			#cv2.imshow("Rectangle", mat.get_data())
 
 			sd.putNumberArray("centerX", centerX)
 			sd.putNumberArray("centerY", centerY)
@@ -168,6 +178,8 @@ while streamRunning:
 		
 			# Press Q on keyboard to  exit
 		if cv2.waitKey(25) & 0xFF == ord('q'):
+			cv2.destroyAllWindows()
+			cam.disable_recording()
 			cam.close()
 			break
    
