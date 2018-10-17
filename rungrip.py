@@ -16,11 +16,13 @@ import numpy as np
 import math
 import urllib
 import datetime
+import time
 import os
 import pyzed.camera as zcam
 import pyzed.types as tp
 import pyzed.core as core
 import pyzed.defines as sl
+import pyzed.mesh as mesh
 
 from networktables import NetworkTables
 from grip import GripPipeline  
@@ -34,8 +36,10 @@ def print_camera_information(cam):
 print("Running...")
 streamRunning = True
 init = zcam.PyInitParameters()
-init.camera_resolution = sl.PyRESOLUTION.PyRESOLUTION_HD720
-init.camera_fps = 15
+init.camera_resolution = sl.PyRESOLUTION.PyRESOLUTION_VGA #HD720 or WVGA
+init.camera_fps = 30
+init.coordinate_system = sl.PyCOORDINATE_SYSTEM.PyCOORDINATE_SYSTEM_RIGHT_HANDED_Y_UP
+init.coordinate_units = sl.PyUNIT.PyUNIT_METER
 cam = zcam.PyZEDCamera()
 runtime = zcam.PyRuntimeParameters()
 if not cam.is_opened():
@@ -44,18 +48,35 @@ status = cam.open(init)
 if status != tp.PyERROR_CODE.PySUCCESS:
 	print(repr(status))
 	streamRunning = False
-	exit()
+	exit(1)
+
+print("Sleeping for 5 seconds...")
+time.sleep(5)
 
 mat = core.PyMat()
 
-cam.set_camera_settings(sl.PyCAMERA_SETTINGS.PyCAMERA_SETTINGS_EXPOSURE, 30)
+py_transform = core.PyTransform()
+tracking_parameters = zcam.PyTrackingParameters(init_pos=py_transform)
+err = cam.enable_tracking(tracking_parameters)
+if err != tp.PyERROR_CODE.PySUCCESS:
+	print("Positional Tracking Failed")
+
+mapping_parameters = zcam.PySpatialMappingParameters()
+err = cam.enable_spatial_mapping(mapping_parameters)
+if err != tp.PyERROR_CODE.PySUCCESS:
+	print("Spatial Mapping Failed")
+
+py_mesh = mesh.PyMesh()  # Create a PyMesh object
+runtime_parameters = zcam.PyRuntimeParameters()
+
+cam.set_camera_settings(sl.PyCAMERA_SETTINGS.PyCAMERA_SETTINGS_EXPOSURE, 60)
 current_value = cam.get_camera_settings(sl.PyCAMERA_SETTINGS.PyCAMERA_SETTINGS_EXPOSURE)
 print("Exposure: " + str(current_value))
 
 print_camera_information(cam)
 
 now = datetime.datetime.now()
-print("Vision Log for " + str(now.day) + "/" + str(now.month) + "/" + str(now.year) + "  ~    " + str(now.hour) + ":" + str(now.minute) +":" + str(now.second))
+print("Vision Log for " + str(now.day) + "/" + str(now.month) + "/" + str(now.year) + " ~ " + str(now.hour) + ":" + str(now.minute) +":" + str(now.second))
 print("OpenCV version: " + str(cv2.__version__))
 print("Starting Vision...")
 
@@ -118,7 +139,7 @@ while(streamRunning == True):
 	else: 
 		break
 """
-
+print("============Vision Active=============")
 while streamRunning:
 	err = cam.grab(runtime)
 	if err == tp.PyERROR_CODE.PySUCCESS:
@@ -140,7 +161,9 @@ while streamRunning:
 
 		#print(repr(vid))
 		cam.record()
+		mapping_state = cam.get_spatial_mapping_state()
 
+		print("Camera FPS: {0}.".format(cam.get_camera_fps()))
 		#print pipeline.boundingRects
 		#print pipeline.center
 		#print pipeline.filter_contours_output
@@ -180,6 +203,15 @@ while streamRunning:
 		if cv2.waitKey(25) & 0xFF == ord('q'):
 			cv2.destroyAllWindows()
 			cam.disable_recording()
+			print("Extracting Mesh...")
+			cam.extract_whole_mesh(py_mesh)
+			print("Filtering Mesh...")
+			py_mesh.filter(mesh.PyMeshFilterParameters())  # Filter the mesh (remove unnecessary vertices and faces)
+			print("Saving Mesh...")
+			py_mesh.save("/mnt/c482766e-ece6-4ec0-8ed2-01712e4e5516/mesh" + str(now.hour) + ":" + str(now.minute) +":" + str(now.second) + ".obj")
+			cam.disable_spatial_mapping()
+			cam.disable_tracking()
 			cam.close()
+			print("Closing Camera")
 			break
    
