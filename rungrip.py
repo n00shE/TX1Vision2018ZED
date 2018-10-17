@@ -36,7 +36,7 @@ def print_camera_information(cam):
 print("Running...")
 streamRunning = True
 init = zcam.PyInitParameters()
-init.camera_resolution = sl.PyRESOLUTION.PyRESOLUTION_VGA #HD720 or WVGA
+init.camera_resolution = sl.PyRESOLUTION.PyRESOLUTION_VGA #HD720 or VGA
 init.camera_fps = 30
 init.coordinate_system = sl.PyCOORDINATE_SYSTEM.PyCOORDINATE_SYSTEM_RIGHT_HANDED_Y_UP
 init.coordinate_units = sl.PyUNIT.PyUNIT_METER
@@ -50,8 +50,8 @@ if status != tp.PyERROR_CODE.PySUCCESS:
 	streamRunning = False
 	exit(1)
 
-print("Sleeping for 5 seconds...")
-time.sleep(5)
+#print("Sleeping for 5 seconds...")
+#time.sleep(5)
 
 mat = core.PyMat()
 
