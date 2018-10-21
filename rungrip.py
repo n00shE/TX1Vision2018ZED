@@ -42,6 +42,8 @@ init.coordinate_system = sl.PyCOORDINATE_SYSTEM.PyCOORDINATE_SYSTEM_RIGHT_HANDED
 init.coordinate_units = sl.PyUNIT.PyUNIT_METER
 cam = zcam.PyZEDCamera()
 runtime = zcam.PyRuntimeParameters()
+temp = 0
+failed = 0
 if not cam.is_opened():
 	print("Opening ZED Camera...")
 status = cam.open(init)
@@ -61,13 +63,9 @@ err = cam.enable_tracking(tracking_parameters)
 if err != tp.PyERROR_CODE.PySUCCESS:
 	print("Positional Tracking Failed")
 
-mapping_parameters = zcam.PySpatialMappingParameters()
-err = cam.enable_spatial_mapping(mapping_parameters)
-if err != tp.PyERROR_CODE.PySUCCESS:
-	print("Spatial Mapping Failed")
-
+zed_pose = zcam.PyPose()
+zed_imu = zcam.PyIMUData()
 py_mesh = mesh.PyMesh()  # Create a PyMesh object
-runtime_parameters = zcam.PyRuntimeParameters()
 
 cam.set_camera_settings(sl.PyCAMERA_SETTINGS.PyCAMERA_SETTINGS_EXPOSURE, 60)
 current_value = cam.get_camera_settings(sl.PyCAMERA_SETTINGS.PyCAMERA_SETTINGS_EXPOSURE)
@@ -80,27 +78,22 @@ print("Vision Log for " + str(now.day) + "/" + str(now.month) + "/" + str(now.ye
 print("OpenCV version: " + str(cv2.__version__))
 print("Starting Vision...")
 
-vid = cam.enable_recording("/mnt/c482766e-ece6-4ec0-8ed2-01712e4e5516/test" + str(now.hour) + ":" + str(now.minute) +":" + str(now.second) + ".svo")
+#vid = cam.enable_recording("/mnt/c482766e-ece6-4ec0-8ed2-01712e4e5516/test" + str(now.hour) + ":" + str(now.minute) +":" + str(now.second) + ".svo")
 
 bytes = ''
 version = int(cv2.__version__[:1])
 pipeline = GripPipeline()
 
-try:
-    NetworkTables.setTeam(2551) 
-    NetworkTables.setIPAddress("roborio-2551-frc.local")
-    NetworkTables.setClientMode()
-    NetworkTables.initialize()
-    print("Initializing Network Tables...")
-except:
-    print("Network Tables already initialized")
-    pass
-
-#NetworkTable.setTeam(2551) 
-#NetworkTable.setIPAddress("roborio-2551-frc.local")
-#NetworkTable.setClientMode()
-#NetworkTable.initialize()
-#print("Initializing Network Tables...")
+#try:
+#NetworkTables.setTeam(2551) 
+#NetworkTables.setIPAddress("10.133.64.110")
+#NetworkTables.setClientMode()
+#NetworkTables.initialize()
+NetworkTables.initialize(server='10.133.64.110')
+print("Initializing Network Tables...")
+#except:
+    #print("Network Tables already initialized")
+    #pass
 
 sd = NetworkTables.getTable('GRIP/myContoursReport')
 
@@ -141,6 +134,24 @@ while(streamRunning == True):
 """
 print("============Vision Active=============")
 while streamRunning:
+	if temp == 30:
+		mapping_parameters = zcam.PySpatialMappingParameters()
+		err = cam.enable_spatial_mapping(mapping_parameters)
+		if err != tp.PyERROR_CODE.PySUCCESS:
+			print("Spatial Mapping Failed")
+			failed = 1
+		if err == tp.PyERROR_CODE.PySUCCESS:
+			print("Spatial Mapping Initalized")
+			failed = 0
+	if failed == 1:
+		mapping_parameters = zcam.PySpatialMappingParameters()
+		err = cam.enable_spatial_mapping(mapping_parameters)
+		if err != tp.PyERROR_CODE.PySUCCESS:
+			print("Spatial Mapping Failed")
+			failed = 1
+		if err == tp.PyERROR_CODE.PySUCCESS:
+			print("Spatial Mapping Initalized")
+			failed = 0
 	err = cam.grab(runtime)
 	if err == tp.PyERROR_CODE.PySUCCESS:
 		cam.retrieve_image(mat, sl.PyVIEW.PyVIEW_LEFT)
@@ -159,9 +170,15 @@ while streamRunning:
 		
 		pipeline.process(mat.get_data())
 
-		#print(repr(vid))
+		print(repr(vid))
 		cam.record()
+
 		mapping_state = cam.get_spatial_mapping_state()
+
+		cam.get_position(zed_pose, sl.PyREFERENCE_FRAME.PyREFERENCE_FRAME_WORLD)
+		cam.get_imu_data(zed_imu, sl.PyTIME_REFERENCE.PyTIME_REFERENCE_IMAGE)
+
+		temp = temp + 1
 
 		print("Camera FPS: {0}.".format(cam.get_camera_fps()))
 		#print pipeline.boundingRects
@@ -181,8 +198,10 @@ while streamRunning:
 	    
 			centerX = [pipeline.largestRect[0] + pipeline.largestRect[2]/2]
 			centerY = [pipeline.largestRect[1] + pipeline.largestRect[3]/2]
-			#cv2.rectangle(mat.get_data(), (pipeline.largestRect[0],pipeline.largestRect[1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
-			#cv2.imshow("Rectangle", mat.get_data())
+
+			image = mat.get_data()
+			cv2.rectangle(image, (pipeline.largestRect[0],pipeline.largestRect[1]), (xtwo,ytwo), (255,0,0), thickness=3, lineType=8, shift=0)
+			cv2.imshow("Rectangle", image)
 
 			sd.putNumberArray("centerX", centerX)
 			sd.putNumberArray("centerY", centerY)
